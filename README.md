@@ -17,4 +17,4 @@ extractcode：012c
 
 
 ![image](https://raw.githubusercontent.com/ald2004/cigrettes-smoke-detect/master/Untitled.png)
-![image](https://raw.githubusercontent.com/ald2004/cigrettes-smoke-detect/master/alipay.jpg)
+![image](https://raw.githubusercontent.com/ald2004/cigrettes-smoke-detect/master/alipay.jpg 100x100)
