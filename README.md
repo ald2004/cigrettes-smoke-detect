@@ -15,7 +15,5 @@ extractcode：aepg
 url：https://pan.baidu.com/s/1fvXsMMj5o1b_ZWTJe2Bsgg 
 extractcode：012c
 
-
-![](./Untitled.png)
-
-![](./alipay.jpg =100x20)
+<img src="Untitled.png" alt="drawing" width="500" height="500"/>
+<img src="alipay.jpg" alt="drawing" width="180" height="237"/>
