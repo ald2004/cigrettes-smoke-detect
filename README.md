@@ -16,5 +16,6 @@ url：https://pan.baidu.com/s/1fvXsMMj5o1b_ZWTJe2Bsgg
 extractcode：012c
 
 
-![image](https://raw.githubusercontent.com/ald2004/cigrettes-smoke-detect/master/Untitled.png)
-![image](https://raw.githubusercontent.com/ald2004/cigrettes-smoke-detect/master/alipay.jpg =100x20)
+![](./Untitled.png)
+
+![](./alipay.jpg =100x20)
