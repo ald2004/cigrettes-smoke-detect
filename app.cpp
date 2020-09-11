@@ -35,14 +35,17 @@ public:
         *new_ptr = _obj;
         if (sync) {
             while (a_ptr.load()) std::this_thread::sleep_for(std::chrono::milliseconds(3));
+            //while a_ptr is not null means this queue have one, wait for 3ms.
         }
-        std::unique_ptr<T> old_ptr(a_ptr.exchange(new_ptr));
+        std::unique_ptr<T> old_ptr(a_ptr.exchange(new_ptr)); 
+            //a_ptr store new T,unique_ptr only used for delete old one.
     }
     T receive() {
         std::unique_ptr<T> ptr;
         do {
             while (!a_ptr.load()) std::this_thread::sleep_for(std::chrono::milliseconds(3));
-            ptr.reset(a_ptr.exchange(NULL));
+                //nothing
+            ptr.reset(a_ptr.exchange(NULL));//ptr take *a_ptr,destory *a_ptr
         } while (!ptr);
         T obj = *ptr;
         return obj;
