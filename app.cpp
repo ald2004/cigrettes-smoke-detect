@@ -25,35 +25,27 @@ std::vector<std::string> objects_names_from_file(std::string const filename) {
     std::cout << "object file " << filename << "names loaded!" << std::endl;
     return lines;
 }
-template<typename T>
-class send_one_replaceable_object_t {
-    const bool sync;
-    std::atomic<T*> a_ptr;
+
+template <typename T>
+class send_one_replaceable_object_t{
+        std::atomic<T*> a_ptr;
 public:
-    void send(T const& _obj) {
-        T* new_ptr = new T;
-        *new_ptr = _obj;
-        if (sync) {
-            while (a_ptr.load()) std::this_thread::sleep_for(std::chrono::milliseconds(3));
-            //while a_ptr is not null means this queue have one, wait for 3ms.
+        void send(T const& _obj) {
+                while (a_ptr.load())std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                T* newobj = new T;
+                *newobj = _obj;
+                std::unique_ptr<T> old_ptr(a_ptr.exchange(newobj));
         }
-        std::unique_ptr<T> old_ptr(a_ptr.exchange(new_ptr)); 
-            //a_ptr store new T,unique_ptr only used for delete old one.
-    }
-    T receive() {
-        std::unique_ptr<T> ptr;
-        do {
-            while (!a_ptr.load()) std::this_thread::sleep_for(std::chrono::milliseconds(3));
-                //nothing
-            ptr.reset(a_ptr.exchange(NULL));//ptr take *a_ptr,destory *a_ptr
-        } while (!ptr);
-        T obj = *ptr;
-        return obj;
-    }
-    bool is_object_present() {
-        return (a_ptr.load() != NULL);
-    }
-    send_one_replaceable_object_t(bool _sync) : sync(_sync), a_ptr(NULL){}
+        T receive() {
+                std::unique_ptr<T> ptr;
+                do{
+                        while (!a_ptr.load()) std::this_thread::sleep_for(std::chrono::milliseconds(3));
+                        ptr.reset(a_ptr.exchange(NULL));
+                } while (!ptr);
+                T obj = *ptr;
+                return obj;
+        }
+send_one_replaceable_object_t(bool _sync):a_ptr(NULL) {}
 };
 
 void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names,
