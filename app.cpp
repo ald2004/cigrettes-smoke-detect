@@ -4,6 +4,7 @@
 #include <vector>
 #include <fstream>
 #include <atomic>
+#include <condition_variable>
 
 #include <opencv2/opencv.hpp>
 //#include <opencv2/ore/version.hpp>
@@ -27,25 +28,35 @@ std::vector<std::string> objects_names_from_file(std::string const filename) {
 }
 
 template <typename T>
-class send_one_replaceable_object_t{
-        std::atomic<T*> a_ptr;
+class send_one_replaceable_object_t {
+    T* a_ptr; //one frame , T* b_ptr,c_ptr,d_ptr
 public:
-        void send(T const& _obj) {
-                while (a_ptr.load())std::this_thread::sleep_for(std::chrono::milliseconds(50));
-                T* newobj = new T;
-                *newobj = _obj;
-                std::unique_ptr<T> old_ptr(a_ptr.exchange(newobj));
-        }
-        T receive() {
-                std::unique_ptr<T> ptr;
-                do{
-                        while (!a_ptr.load()) std::this_thread::sleep_for(std::chrono::milliseconds(3));
-                        ptr.reset(a_ptr.exchange(NULL));
-                } while (!ptr);
-                T obj = *ptr;
-                return obj;
-        }
-send_one_replaceable_object_t(bool _sync):a_ptr(NULL) {}
+    void send(T const& _obj) {
+        std::unique_lock<std::mutex> l(mtx);
+        condition.wait(l, [&]() {
+            return a_ptr==NULL;
+            });
+        T* newobj = new T;
+        *newobj = _obj;
+        a_ptr = newobj;
+        l.unlock(); condition.notify_all();
+    }
+    T receive() {
+        std::unique_lock<std::mutex> l(mtx);
+        std::unique_ptr<T> ptr;
+            condition.wait(l, [&]() {
+                return !(a_ptr == NULL);
+                });
+            ptr.reset(a_ptr);
+            a_ptr = NULL;
+        T obj = *ptr;
+        l.unlock(); condition.notify_all();
+        return obj;
+    }
+    send_one_replaceable_object_t(bool _sync) :a_ptr(NULL), condition() {}
+private:
+    std::condition_variable condition;
+    mutable std::mutex mtx;
 };
 
 void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names,
