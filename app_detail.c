@@ -267,7 +267,94 @@ int main(int argc, char** argv) {
     double time_remaining, avg_time = -1, alpha_time = 0.01;
     while (get_current_iteration(net)<net.max_batches)
     {
-        printf("\n do some training... \n"); //todo 
+        if (l.random && count++ % 10 == 0) {
+            float rand_coef = 1.4;
+            if (l.random != 1.0) rand_coef = l.random;
+            printf("Resizing, random_coef = %.2f \n", rand_coef);
+            float random_val = rand_scale(rand_coef);    // *x or /x
+            int dim_w = roundl(random_val * init_w / net.resize_step + 1) * net.resize_step;
+            int dim_h = roundl(random_val * init_h / net.resize_step + 1) * net.resize_step;
+            if (random_val < 1 && (dim_w > init_w || dim_h > init_h)) dim_w = init_w, dim_h = init_h;
+
+            int max_dim_w = roundl(rand_coef * init_w / net.resize_step + 1) * net.resize_step;
+            int max_dim_h = roundl(rand_coef * init_h / net.resize_step + 1) * net.resize_step;
+
+            // at the beginning (check if enough memory) and at the end (calc rolling mean/variance)
+            if (avg_loss < 0 || get_current_iteration(net) > net.max_batches - 100) {
+                dim_w = max_dim_w;
+                dim_h = max_dim_h;
+            }
+
+            if (dim_w < net.resize_step) dim_w = net.resize_step;
+            if (dim_h < net.resize_step) dim_h = net.resize_step;
+            int dim_b = (init_b * max_dim_w * max_dim_h) / (dim_w * dim_h);
+            int new_dim_b = (int)(dim_b * 0.8);
+            if (new_dim_b > init_b) dim_b = new_dim_b;
+
+            args.w = dim_w;
+            args.h = dim_h;
+
+            int k;
+            if (net.dynamic_minibatch) {
+                for (k = 0; k < ngpus; ++k) {
+                    (*nets[k].seen) = init_b * net.subdivisions * get_current_iteration(net); // remove this line, when you will save to weights-file both: seen & cur_iteration
+                    nets[k].batch = dim_b;
+                    int j;
+                    for (j = 0; j < nets[k].n; ++j)
+                        nets[k].layers[j].batch = dim_b;
+                }
+                net.batch = dim_b;
+                imgs = net.batch * net.subdivisions * ngpus;
+                args.n = imgs;
+                printf("\n %d x %d  (batch = %d) \n", dim_w, dim_h, net.batch);
+            }
+            else
+                printf("\n %d x %d \n", dim_w, dim_h);
+
+            pthread_join(load_thread, 0);
+            train = buffer;
+            free_data(train);
+            load_thread = load_data(args);
+
+            for (k = 0; k < ngpus; ++k) {
+                resize_network(nets + k, dim_w, dim_h);
+            }
+            net = nets[0];
+        }
+        double time = what_time_is_it_now();
+        pthread_join(load_thread, 0);
+        train = buffer;
+        if (net.track) {
+            net.sequential_subdivisions = get_current_seq_subdivisions(net);
+            args.threads = net.sequential_subdivisions * ngpus;
+            printf(" sequential_subdivisions = %d, sequence = %d \n", net.sequential_subdivisions, get_sequence_value(net));
+        }
+        load_thread = load_data(args);
+
+        const double load_time = (what_time_is_it_now() - time);
+        printf("Loaded: %lf seconds", load_time);
+        if (load_time > 0.1 && avg_loss > 0) printf(" - performance bottleneck on CPU or Disk HDD/SSD");
+        printf("\n");
+        time = what_time_is_it_now();
+        float loss = 0;
+#ifdef GPU
+        if (ngpus == 1) {
+            int wait_key = (dont_show) ? 0 : 1;
+            loss = train_network_waitkey(net, train, wait_key);
+        }
+        else {
+            loss = train_networks(nets, ngpus, train, 4);
+        }
+#else
+        loss = train_network(net, train);
+#endif
+        if (avg_loss < 0 || avg_loss != avg_loss) avg_loss = loss;    // if(-inf or nan)
+        avg_loss = avg_loss * .9 + loss * .1;
+        const int iteration = get_current_iteration(net);
+        printf("\n %d: %f, %f avg loss, %f rate, %lf seconds, %d images, %f hours left\n", iteration, loss, avg_loss, get_current_rate(net), (what_time_is_it_now() - time), iteration * imgs, avg_time);
+        //8001: 0.595442, 0.595442 avg loss, 0.001300 rate, 13.209250 seconds, 512064 images, -1.000000 hours left
+        fflush(stdout);
+        break;
     }
 
 #ifdef GPU
