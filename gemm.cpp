@@ -87,6 +87,26 @@ int main(int argc,char** argv) {
 
     is_avx();
     is_fma_avx2();
+    for (i = 0; i < 100; i++) {
+        time_ongpu(0, 0, 64, 2916, 363);
+        time_ongpu(0, 0, 64, 2916, 363);
+        time_ongpu(0, 0, 64, 2916, 363);
+        time_ongpu(0, 0, 192, 729, 1600);
+        time_ongpu(0, 0, 384, 196, 1728);
+        time_ongpu(0, 0, 256, 196, 3456);
+        time_ongpu(0, 0, 256, 196, 2304);
+        time_ongpu(0, 0, 128, 4096, 12544);
+        time_ongpu(0, 0, 128, 4096, 4096);
+
+        time_ongpu(0, 0, 64, 75, 12544);
+        time_ongpu(0, 0, 64, 75, 12544);
+        time_ongpu(0, 0, 64, 75, 12544);
+        time_ongpu(0, 0, 64, 576, 12544);
+        time_ongpu(0, 0, 256, 2304, 784);
+        time_ongpu(1, 1, 2304, 256, 784);
+        time_ongpu(0, 0, 512, 4608, 196);
+        time_ongpu(1, 1, 4608, 512, 196);
+    }
 }
 
 /*
@@ -136,4 +156,22 @@ CPU
 4| 0.7503| 0.8272| 1.7829| 1.9184| 0.9227| 2.3010| 
 
 Matrix Multiplication 4x5 * 5x6, TA=0, TB=0: 5.03301e-15 SSE
+
+Matrix Multiplication 64x2916 * 2916x363, TA=0, TB=0: 0.000000 s, inf GFLOPS
+Matrix Multiplication 64x2916 * 2916x363, TA=0, TB=0: 0.030000 s, 45.178497 GFLOPS
+Matrix Multiplication 64x2916 * 2916x363, TA=0, TB=0: 0.020000 s, 67.767746 GFLOPS
+Matrix Multiplication 192x729 * 729x1600, TA=0, TB=0: 0.020000 s, 224.256005 GFLOPS
+Matrix Multiplication 384x196 * 196x1728, TA=0, TB=0: 0.020000 s, 130.719747 GFLOPS
+Matrix Multiplication 256x196 * 196x3456, TA=0, TB=0: 0.030000 s, 116.195331 GFLOPS
+Matrix Multiplication 256x196 * 196x2304, TA=0, TB=0: 0.000000 s, inf GFLOPS
+Matrix Multiplication 128x4096 * 4096x12544, TA=0, TB=0: 0.040000 s, 3289.137226 GFLOPS
+Matrix Multiplication 128x4096 * 4096x4096, TA=0, TB=0: 0.010000 s, 4296.015968 GFLOPS
+Matrix Multiplication 64x75 * 75x12544, TA=0, TB=0: 0.000000 s, inf GFLOPS
+Matrix Multiplication 64x75 * 75x12544, TA=0, TB=0: 0.000000 s, inf GFLOPS
+Matrix Multiplication 64x75 * 75x12544, TA=0, TB=0: 0.000000 s, inf GFLOPS
+Matrix Multiplication 64x576 * 576x12544, TA=0, TB=0: 0.030000 s, 308.816562 GFLOPS
+Matrix Multiplication 256x2304 * 2304x784, TA=0, TB=0: 0.030000 s, 308.415154 GFLOPS
+Matrix Multiplication 2304x256 * 256x784, TA=1, TB=1: 0.020000 s, 464.228362 GFLOPS
+Matrix Multiplication 512x4608 * 4608x196, TA=0, TB=0: 0.000000 s, inf GFLOPS
+Matrix Multiplication 4608x512 * 512x196, TA=1, TB=1: 0.000000 s, inf GFLOPS
 */
